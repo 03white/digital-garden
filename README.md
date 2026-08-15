@@ -1,4 +1,4 @@
-﻿# Digital Garden
+# Digital Garden
 
 一个基于 Astro 的 GitHub Pages 静态博客 / 数字花园项目。
 
