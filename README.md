@@ -1,72 +1,93 @@
-# Digital Garden
+﻿# Digital Garden
 
-涓€涓熀浜?Astro 鐨?GitHub Pages 闈欐€佸崥瀹?/ 鏁板瓧鑺卞洯椤圭洰銆?
-## 鎶€鏈爤
+一个基于 Astro 的 GitHub Pages 静态博客 / 数字花园项目。
 
-- Astro锛氶潤鎬佺珯鐐规鏋躲€?- Markdown / MDX锛氬唴瀹瑰啓浣滄牸寮忋€?- Astro Content Collections锛氭枃绔犲拰绗旇鍏冩暟鎹害鏉熴€?- GitHub Actions + GitHub Pages锛氳嚜鍔ㄦ瀯寤哄拰閮ㄧ讲銆?
-## 鏈湴寮€鍙?
-鍏堝畨瑁呬緷璧栵細
+## 技术栈
+
+- Astro：静态站点框架。
+- Markdown / MDX：内容写作格式。
+- Astro Content Collections：文章和笔记元数据约束。
+- GitHub Actions + GitHub Pages：自动构建和部署。
+
+## 本地开发
+
+安装依赖：
 
 ```bash
 npm install
 ```
 
-鍚姩寮€鍙戞湇鍔★細
+启动开发服务：
 
 ```bash
 npm run dev
 ```
 
-鐢变簬褰撳墠榛樿鎸?GitHub Pages 椤圭洰椤甸厤缃簡 `base: /digital-garden`锛屾湰鍦拌闂矾寰勯€氬父鏄細
+当前项目默认配置了 `base: /digital-garden`，本地访问地址通常是：
 
 ```text
 http://localhost:4321/digital-garden/
 ```
 
-鏋勫缓鐢熶骇鐗堟湰锛?
+构建生产版本：
+
 ```bash
 npm run build
 ```
 
-棰勮鏋勫缓缁撴灉锛?
+预览构建结果：
+
 ```bash
 npm run preview
 ```
 
-## 鍐欐枃绔?
-鍦?`src/content/posts` 涓柊澧?Markdown 鏂囦欢锛屼緥濡傦細
+## 写文章
+
+在 `src/content/posts` 中新增 Markdown 文件：
 
 ```md
 ---
-title: 鏂版枃绔犳爣棰?description: 鏂囩珷鎽樿銆?pubDate: 2026-08-15
+title: 新文章标题
+description: 文章摘要。
+pubDate: 2026-08-15
 tags: [astro, blog]
 draft: false
 ---
 
-杩欓噷鏄鏂囥€?```
+这里是正文。
+```
 
-鏂囩珷浼氱敓鎴愬埌 `/posts/<鏂囦欢鍚?/`銆?
-## 鍐欑瑪璁?
-鍦?`src/content/notes` 涓柊澧?Markdown 鏂囦欢锛屼緥濡傦細
+文章会生成到 `/posts/<文件名>/`。
+
+## 写笔记
+
+在 `src/content/notes` 中新增 Markdown 文件：
 
 ```md
 ---
-title: 鏂扮瑪璁版爣棰?description: 绗旇鎽樿銆?createdDate: 2026-08-15
+title: 新笔记标题
+description: 笔记摘要。
+createdDate: 2026-08-15
 updatedDate: 2026-08-15
 tags: [digital-garden]
 status: seedling
 draft: false
 ---
 
-杩欓噷鏄瑪璁版鏂囥€?```
+这里是笔记正文。
+```
 
-绗旇鐘舵€佸彲閫夛細
+笔记状态可选：
 
-- `seedling`锛氱瀛愩€?- `growing`锛氱敓闀夸腑銆?- `evergreen`锛氬父闈掋€?
-绗旇浼氱敓鎴愬埌 `/notes/<鏂囦欢鍚?/`銆?
-## GitHub Pages 閰嶇疆
+- `seedling`：种子。
+- `growing`：生长中。
+- `evergreen`：常青。
 
-褰撳墠 `astro.config.mjs` 榛樿閫傞厤浠撳簱鍚嶄负 `digital-garden` 鐨?GitHub Pages 椤圭洰椤碉細
+笔记会生成到 `/notes/<文件名>/`。
+
+## GitHub Pages 配置
+
+当前 `astro.config.mjs` 默认适配仓库名为 `digital-garden` 的 GitHub Pages 项目页：
 
 ```js
 export default defineConfig({
@@ -75,24 +96,27 @@ export default defineConfig({
 });
 ```
 
-閮ㄧ讲鍓嶅缓璁妸 `SITE` 璁剧疆涓轰綘鐨勫疄闄?GitHub Pages 鍦板潃锛屾垨鐩存帴淇敼 `astro.config.mjs`銆?
-濡傛灉浠撳簱鏄櫘閫氶」鐩〉锛屽湴鍧€閫氬父鏄細
+站点地址通常是：
 
 ```text
 https://03white.github.io/digital-garden/
 ```
 
-濡傛灉浠撳簱鏄敤鎴蜂富椤典粨搴?`<username>.github.io`锛岄€氬父闇€瑕佺Щ闄?`base` 閰嶇疆銆?
-## 鑷姩閮ㄧ讲
+如果以后改成用户主页仓库 `03white.github.io`，通常需要移除 `base` 配置。
 
-`.github/workflows/deploy.yml` 浼氬湪鎺ㄩ€佸埌 `main` 鍒嗘敮鏃惰嚜鍔ㄦ瀯寤哄苟閮ㄧ讲鍒?GitHub Pages銆?
-浣犺繕闇€瑕佸湪 GitHub 浠撳簱涓繘鍏ワ細
+## 自动部署
+
+`.github/workflows/deploy.yml` 会在推送到 `main` 分支时自动构建并部署到 GitHub Pages。
+
+还需要在 GitHub 仓库中进入：
 
 ```text
-Settings 鈫?Pages 鈫?Build and deployment 鈫?Source 鈫?GitHub Actions
+Settings → Pages → Build and deployment → Source → GitHub Actions
 ```
 
-## 椤圭洰鏂囨。
+并将 Source 设置为 `GitHub Actions`。
 
-- `涓€鑸渶姹傚垎鏋?md`
-- `璇︾粏璁捐.md`
+## 项目文档
+
+- `一般需求分析.md`
+- `详细设计.md`
