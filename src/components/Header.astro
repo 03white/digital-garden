@@ -1,10 +1,16 @@
-﻿---
+---
 import { SITE, withBase } from '../lib/site';
 ---
 
 <header class="site-header">
   <a class="site-title" href={withBase('/')}>{SITE.title}</a>
-  <nav class="site-nav" aria-label="主导航">
-    {SITE.navLinks.map((link) => <a href={withBase(link.href)}>{link.label}</a>)}
-  </nav>
+  <div class="site-actions">
+    <nav class="site-nav" aria-label="主导航">
+      {SITE.navLinks.map((link) => <a href={withBase(link.href)}>{link.label}</a>)}
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="切换浅色/深色主题" data-theme-toggle>
+      <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+      <span class="theme-toggle-text">深色</span>
+    </button>
+  </div>
 </header>

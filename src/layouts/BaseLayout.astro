@@ -1,4 +1,4 @@
-﻿---
+---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE } from '../lib/site';
@@ -25,6 +25,24 @@ const canonicalUrl = Astro.url.href;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <script is:inline>
+      (() => {
+        const storageKey = 'digital-garden-theme';
+        const isTheme = (value) => value === 'light' || value === 'dark';
+        const getStoredTheme = () => {
+          try {
+            return localStorage.getItem(storageKey);
+          } catch {
+            return null;
+          }
+        };
+        const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        const theme = isTheme(getStoredTheme()) ? getStoredTheme() : preferredTheme;
+
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
     <title>{pageTitle}</title>
   </head>
   <body>
@@ -35,5 +53,45 @@ const canonicalUrl = Astro.url.href;
       </main>
       <Footer />
     </div>
+    <script is:inline>
+      (() => {
+        const storageKey = 'digital-garden-theme';
+        const toggle = document.querySelector('[data-theme-toggle]');
+
+        if (!toggle) {
+          return;
+        }
+
+        const icon = toggle.querySelector('.theme-toggle-icon');
+        const text = toggle.querySelector('.theme-toggle-text');
+        const getTheme = () => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        const storeTheme = (theme) => {
+          try {
+            localStorage.setItem(storageKey, theme);
+          } catch {
+          }
+        };
+        const applyTheme = (theme) => {
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          toggle.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+
+          if (icon) {
+            icon.textContent = theme === 'light' ? '☀' : '☾';
+          }
+
+          if (text) {
+            text.textContent = theme === 'light' ? '浅色' : '深色';
+          }
+        };
+
+        applyTheme(getTheme());
+        toggle.addEventListener('click', () => {
+          const nextTheme = getTheme() === 'light' ? 'dark' : 'light';
+          applyTheme(nextTheme);
+          storeTheme(nextTheme);
+        });
+      })();
+    </script>
   </body>
 </html>
