@@ -1,0 +1,18 @@
+﻿---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPublishedNotes } from '../../lib/content';
+
+const notes = await getPublishedNotes();
+---
+
+<BaseLayout title="笔记" description="所有持续生长中的花园笔记。">
+  <section class="page-heading">
+    <p class="eyebrow">Notes</p>
+    <h1>笔记</h1>
+    <p>碎片、概念、索引和仍在持续演进的知识卡片。</p>
+  </section>
+  <div class="entry-list">
+    {notes.map((note) => <PostCard entry={note} />)}
+  </div>
+</BaseLayout>

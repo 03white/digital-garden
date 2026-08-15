@@ -1,0 +1,27 @@
+﻿---
+import type { GardenEntry } from '../lib/content';
+import { formatDate, getEntryDate, getEntryDescription, getEntryUrl, getNoteStatusLabel } from '../lib/content';
+import Tag from './Tag.astro';
+
+interface Props {
+  entry: GardenEntry;
+}
+
+const { entry } = Astro.props;
+const isNote = entry.collection === 'notes';
+---
+
+<article class="entry-card">
+  <div class="entry-meta">
+    <span>{isNote ? '笔记' : '文章'}</span>
+    <span>{formatDate(getEntryDate(entry))}</span>
+    {isNote && <span>{getNoteStatusLabel(entry.data.status)}</span>}
+  </div>
+  <h2><a href={getEntryUrl(entry)}>{entry.data.title}</a></h2>
+  <p>{getEntryDescription(entry)}</p>
+  {entry.data.tags.length > 0 && (
+    <div class="tag-list" aria-label="标签">
+      {entry.data.tags.map((tag) => <Tag name={tag} />)}
+    </div>
+  )}
+</article>

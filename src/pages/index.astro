@@ -1,0 +1,57 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import Tag from '../components/Tag.astro';
+import { getAllTags, getPublishedNotes, getPublishedPosts } from '../lib/content';
+import { SITE, withBase } from '../lib/site';
+
+const [posts, notes, tags] = await Promise.all([
+  getPublishedPosts(),
+  getPublishedNotes(),
+  getAllTags(),
+]);
+---
+
+<BaseLayout>
+  <section class="hero">
+    <p class="eyebrow">Digital Garden</p>
+    <h1>持续生长的个人知识花园</h1>
+    <p>{SITE.description}</p>
+    <div class="hero-actions">
+      <a class="button" href={withBase('/posts/')}>阅读文章</a>
+      <a class="button secondary" href={withBase('/notes/')}>浏览笔记</a>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <h2>最新文章</h2>
+      <a href={withBase('/posts/')}>查看全部</a>
+    </div>
+    <div class="entry-list">
+      {posts.slice(0, 3).map((post) => <PostCard entry={post} />)}
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <h2>最近笔记</h2>
+      <a href={withBase('/notes/')}>查看全部</a>
+    </div>
+    <div class="entry-list">
+      {notes.slice(0, 3).map((note) => <PostCard entry={note} />)}
+    </div>
+  </section>
+
+  {tags.length > 0 && (
+    <section class="section-block">
+      <div class="section-heading">
+        <h2>常用标签</h2>
+        <a href={withBase('/tags/')}>标签索引</a>
+      </div>
+      <div class="tag-list">
+        {tags.slice(0, 12).map((tag) => <Tag name={tag.name} count={tag.count} />)}
+      </div>
+    </section>
+  )}
+</BaseLayout>

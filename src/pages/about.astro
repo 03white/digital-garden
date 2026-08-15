@@ -1,0 +1,25 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../lib/site';
+---
+
+<BaseLayout title="关于" description="关于这个数字花园和站点作者。">
+  <article class="content-page">
+    <header class="content-header">
+      <p class="eyebrow">About</p>
+      <h1>关于这个花园</h1>
+      <p class="content-description">这里用于记录技术、项目、阅读和长期思考。</p>
+    </header>
+    <div class="prose">
+      <p>
+        这是一个基于 Astro 构建的个人静态博客 / 数字花园。它不是只按时间线排列的传统博客，
+        也会容纳仍在生长中的笔记、索引和知识片段。
+      </p>
+      <p>
+        你可以在 <strong>文章</strong> 中发布相对完整的长文，在 <strong>笔记</strong> 中维护持续迭代的想法。
+      </p>
+      <p>后续可以把这里替换为你的个人简介、联系方式和内容主题说明。</p>
+      <p>项目仓库：<a href={SITE.github} target="_blank" rel="noreferrer">{SITE.github}</a></p>
+    </div>
+  </article>
+</BaseLayout>
