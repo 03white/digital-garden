@@ -85,6 +85,56 @@ draft: false
 
 笔记会生成到 `/notes/<文件名>/`。
 
+## 自动创建文章 / 笔记
+
+推荐使用内置脚本生成模板，避免手写 frontmatter 字段出错。
+
+更完整的模板说明和备用文章模板见 `CONTENT_TEMPLATES.md`。
+
+交互式创建：
+
+```bash
+npm run new
+```
+
+快速创建文章：
+
+```bash
+npm run new:post -- "My New Post"
+```
+
+快速创建笔记：
+
+```bash
+npm run new:note -- "My New Note"
+```
+
+脚本会自动创建文件：
+
+- 文章：`src/content/posts/<slug>.md`
+- 笔记：`src/content/notes/<slug>.md`
+
+常用参数：
+
+```bash
+npm run new:post -- --title "My New Post" --slug my-new-post --tags astro,blog --publish
+npm run new:note -- --title "Reading Note" --slug reading-note --tags reading --status growing
+npm run new:post -- --title "Preview Only" --slug preview-only --dry-run
+```
+
+参数说明：
+
+- `--title`：标题。
+- `--slug`：文件名，建议使用小写英文、数字和短横线。
+- `--description`：摘要。
+- `--tags`：标签，用英文逗号分隔。
+- `--draft`：保存为草稿。
+- `--publish`：直接发布，生成 `draft: false`。
+- `--status`：笔记状态，可选 `seedling`、`growing`、`evergreen`。
+- `--dry-run`：只预览将创建的文件内容，不实际写入。
+- `--help`：查看脚本帮助。
+
+默认会生成草稿，也就是 `draft: true`。写完后把它改成 `draft: false`，或者创建时加 `--publish`。如果标题是中文，建议同时传 `--slug`，例如 `--slug my-reading-note`。
 ## GitHub Pages 配置
 
 当前 `astro.config.mjs` 默认适配仓库名为 `digital-garden` 的 GitHub Pages 项目页：

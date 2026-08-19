@@ -1,19 +1,22 @@
 {
-    "name":  "digital-garden",
-    "version":  "0.1.0",
-    "private":  true,
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "astro dev",
-                    "build":  "astro check \u0026\u0026 astro build",
-                    "preview":  "astro preview",
-                    "check":  "astro check"
-                },
-    "dependencies":  {
-                         "astro":  "^7.2.2"
-                     },
-    "devDependencies":  {
-                            "@astrojs/check":  "^0.9.10",
-                            "typescript":  "^6.0.3"
-                        }
+    "name": "digital-garden",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "astro dev",
+        "build": "astro check && astro build",
+        "preview": "astro preview",
+        "check": "astro check",
+        "new": "node scripts/new-content.mjs",
+        "new:post": "node scripts/new-content.mjs post",
+        "new:note": "node scripts/new-content.mjs note"
+    },
+    "dependencies": {
+        "astro": "^7.2.2"
+    },
+    "devDependencies": {
+        "@astrojs/check": "^0.9.10",
+        "typescript": "^6.0.3"
+    }
 }
