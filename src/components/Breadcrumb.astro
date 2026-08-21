@@ -1,0 +1,40 @@
+---
+import type { GardenCollection } from '../lib/content';
+import { getFolderUrl } from '../lib/content';
+import { getFolderTrail } from '../lib/folder-tree';
+
+/**
+ * 归档路径面包屑：🏠 › 全部笔记 › C++ › 当前。
+ *
+ * 最后一段是「你在这里」，渲染成不可点的胶囊；前面每一级都是链接。
+ * 归档页把自己的目录名当 current 传进来，条目页传标题。
+ */
+
+interface Props {
+  collection: GardenCollection;
+  /** 当前所在的归档路径；current 已经代表最后一级时不要重复包含它。 */
+  folderPath: string;
+  current: string;
+}
+
+const { collection, folderPath, current } = Astro.props;
+const label = collection === 'posts' ? '文章' : '笔记';
+const trail = getFolderTrail(folderPath);
+---
+
+<nav class="folder-breadcrumb" aria-label="归档路径" data-pagefind-ignore>
+  <a class="folder-breadcrumb-home" href={getFolderUrl(collection, '')} aria-label={`全部${label}`}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5.5 9.5V20h13V9.5" />
+    </svg>
+  </a>
+  {trail.map((crumb) => (
+    <>
+      <span class="folder-breadcrumb-sep" aria-hidden="true">›</span>
+      <a href={getFolderUrl(collection, crumb.path)}>{crumb.label}</a>
+    </>
+  ))}
+  <span class="folder-breadcrumb-sep" aria-hidden="true">›</span>
+  <span class="folder-breadcrumb-current" aria-current="page">{current}</span>
+</nav>

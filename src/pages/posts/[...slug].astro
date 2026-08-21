@@ -1,0 +1,59 @@
+---
+import { render } from 'astro:content';
+import FolderArchive from '../../components/FolderArchive.astro';
+import FolderNav from '../../components/FolderNav.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getBacklinks, getFolderTree, getPublishedPosts } from '../../lib/content';
+import { findFolder, flattenFolderPaths } from '../../lib/folder-tree';
+
+/** 和 notes/[...slug].astro 同构，改动时两边要一起改。 */
+export async function getStaticPaths() {
+  const posts = await getPublishedPosts();
+  const tree = await getFolderTree('posts');
+  const entryIds = new Set(posts.map((post) => post.id));
+
+  return [
+    ...posts.map((post) => ({
+      params: { slug: post.id },
+      props: { post, folder: undefined },
+    })),
+    ...flattenFolderPaths(tree)
+      .filter((folderPath) => {
+        if (entryIds.has(folderPath)) {
+          console.warn(`[archive] posts/${folderPath}/ 同时是文章和文件夹，归档页已跳过`);
+
+          return false;
+        }
+
+        return true;
+      })
+      .map((folderPath) => ({
+        params: { slug: folderPath },
+        props: { post: undefined, folder: findFolder(tree, folderPath) },
+      })),
+  ];
+}
+
+const { post, folder } = Astro.props;
+const tree = await getFolderTree('posts');
+// headings 给右栏页内目录用；Sätteri 会把同样的 slug 写成标题元素的 id。
+const rendered = post ? await render(post) : undefined;
+const backlinks = post ? await getBacklinks(post) : [];
+---
+
+{post && rendered && (
+  <ContentLayout entry={post} backlinks={backlinks} tree={tree} headings={rendered.headings}>
+    <rendered.Content />
+  </ContentLayout>
+)}
+{folder && (
+  <BaseLayout title={folder.label} description={`归档「${folder.label}」下的所有文章。`} wide>
+    <div class="docs-layout no-toc">
+      <FolderNav tree={tree} collection="posts" currentPath={folder.path} />
+      <div class="docs-main">
+        <FolderArchive folder={folder} collection="posts" />
+      </div>
+    </div>
+  </BaseLayout>
+)}

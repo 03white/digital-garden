@@ -1,0 +1,46 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+/**
+ * 右栏页内目录 + 阅读进度。
+ *
+ * 标题和 slug 来自 `render(entry)` 返回的 headings——Sätteri 的 heading-ids 插件
+ * 用 github-slugger 生成 slug，并把同一个值写成元素的 id，所以锚点天然对得上。
+ *
+ * 进度百分比和当前章节高亮由 BaseLayout 末尾那段脚本驱动；没有 JS 时这里
+ * 仍然是一组可用的锚点链接。
+ */
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+// h1 是文章标题本身，h5/h6 放进目录只会变噪音。
+const items = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 4);
+// 有的文章从 h3 起步，按实际最浅的一级归零，避免整栏莫名其妙地缩进一层。
+const minDepth = items.length > 0 ? Math.min(...items.map((heading) => heading.depth)) : 2;
+---
+
+<aside class="docs-rail docs-toc" data-toc>
+  <div class="toc-progress">
+    <span class="toc-progress-value" data-toc-value>0%</span>
+    <span class="toc-progress-label">已读</span>
+  </div>
+  <div class="toc-progress-track">
+    <div class="toc-progress-bar" data-toc-bar></div>
+  </div>
+  {items.length > 0 ? (
+    <nav aria-label="页内目录">
+      <ul class="toc-list">
+        {items.map((heading) => (
+          <li>
+            <a href={`#${heading.slug}`} style={`--toc-depth:${heading.depth - minDepth}`}>{heading.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  ) : (
+    <p class="toc-empty">这篇内容还没有小标题。</p>
+  )}
+</aside>

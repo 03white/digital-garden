@@ -1,18 +1,26 @@
 ﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FolderNav from '../../components/FolderNav.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getPublishedPosts } from '../../lib/content';
+import { getFolderTree, getPublishedPosts } from '../../lib/content';
 
+// 列表页是「全部」视图，不按目录过滤——分目录浏览走侧边栏和归档页。
 const posts = await getPublishedPosts();
+const tree = await getFolderTree('posts');
 ---
 
-<BaseLayout title="文章" description="所有正式发布的博客文章。">
-  <section class="page-heading">
-    <p class="eyebrow">Posts</p>
-    <h1>文章</h1>
-    <p>相对完整的技术文章、项目复盘、教程和长文思考。</p>
-  </section>
-  <div class="entry-list">
-    {posts.map((post) => <PostCard entry={post} />)}
+<BaseLayout title="文章" description="所有正式发布的博客文章。" wide>
+  <div class="docs-layout no-toc">
+    <FolderNav tree={tree} collection="posts" currentPath="" />
+    <div class="docs-main">
+      <section class="page-heading">
+        <p class="eyebrow">Posts</p>
+        <h1>文章</h1>
+        <p>相对完整的技术文章、项目复盘、教程和长文思考。</p>
+      </section>
+      <div class="entry-list">
+        {posts.map((post) => <PostCard entry={post} />)}
+      </div>
+    </div>
   </div>
 </BaseLayout>

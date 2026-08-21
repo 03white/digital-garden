@@ -1,0 +1,62 @@
+---
+import type { GardenCollection } from '../lib/content';
+import { getEntryUrl, getFolderUrl } from '../lib/content';
+import type { FolderNode } from '../lib/folder-tree';
+import { isAncestorPath } from '../lib/folder-tree';
+
+/**
+ * 归档目录树，递归渲染一个 FolderNode 的子目录和直属条目。
+ *
+ * 展开/收起用原生 <details>，所以这个组件不需要任何客户端 JS——键盘操作、
+ * 无障碍语义、无 JS 环境下的可用性全部由浏览器负责。当前条目的祖先目录在
+ * 服务端就带上 open，进页面即定位，不会闪一下再展开。
+ *
+ * 目录行里点文件夹名进归档页，点行内其它地方（图标、计数、箭头）展开收起。
+ */
+
+interface Props {
+  node: FolderNode;
+  collection: GardenCollection;
+  /** 当前页面所在的归档路径：条目页取它所在目录，归档页取自身路径。 */
+  currentPath: string;
+  /** 当前条目 id；在归档页上是 undefined，此时高亮的是 currentPath 那个目录。 */
+  currentId?: string;
+}
+
+const { node, collection, currentPath, currentId } = Astro.props;
+---
+
+<ul class="folder-tree">
+  {node.folders.map((folder) => {
+    const isCurrent = currentId === undefined && currentPath === folder.path;
+
+    return (
+      <li>
+        <details open={isAncestorPath(folder.path, currentPath)}>
+          <summary class="folder-row" data-current={isCurrent ? '' : undefined}>
+            <svg class="folder-row-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 6.75A2 2 0 0 1 5 4.75h3.3a2 2 0 0 1 1.5.68l1.06 1.2H19a2 2 0 0 1 2 2v8.62a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+            <a class="folder-row-label" href={getFolderUrl(collection, folder.path)} aria-current={isCurrent ? 'page' : undefined}>{folder.label}</a>
+            <svg class="folder-row-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </summary>
+          <Astro.self node={folder} collection={collection} currentPath={currentPath} currentId={currentId} />
+        </details>
+      </li>
+    );
+  })}
+  {node.entries.map((entry) => (
+    <li>
+      <a
+        class="folder-row folder-row-entry"
+        href={getEntryUrl(entry)}
+        data-current={entry.id === currentId ? '' : undefined}
+        aria-current={entry.id === currentId ? 'page' : undefined}
+      >
+        <span class="folder-row-label">{entry.data.title}</span>
+      </a>
+    </li>
+  ))}
+</ul>

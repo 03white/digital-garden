@@ -1,4 +1,5 @@
-﻿---
+---
+import { getTagHue } from '../lib/colors';
 import { withBase } from '../lib/site';
 
 interface Props {
@@ -7,8 +8,10 @@ interface Props {
 }
 
 const { name, count } = Astro.props;
+// 只传色相，饱和度和明度由 global.css 的 --tag-s / --tag-l 按主题统一给。
+const hue = getTagHue(name);
 ---
 
-<a class="tag" href={withBase(`/tags/${encodeURIComponent(name)}/`)}>
+<a class="tag" href={withBase(`/tags/${encodeURIComponent(name)}/`)} style={`--tag-h:${hue}`}>
   #{name}{count !== undefined ? ` · ${count}` : ''}
 </a>

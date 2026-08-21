@@ -1,36 +1,70 @@
 ﻿---
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import FolderNav from '../components/FolderNav.astro';
+import TocRail from '../components/TocRail.astro';
 import Tag from '../components/Tag.astro';
 import type { GardenEntry } from '../lib/content';
-import { formatDate, getEntryDate, getEntryDescription, getEntryPublishedDate, getNoteStatusLabel } from '../lib/content';
+import { formatDate, getEntryDate, getEntryDescription, getEntryFolderPath, getEntryPublishedDate, getEntryUrl, getNoteStatusLabel } from '../lib/content';
+import type { FolderNode } from '../lib/folder-tree';
 
 interface Props {
   entry: GardenEntry;
+  backlinks?: GardenEntry[];
+  tree: FolderNode;
+  headings: MarkdownHeading[];
 }
 
-const { entry } = Astro.props;
+const { entry, backlinks = [], tree, headings } = Astro.props;
 const isNote = entry.collection === 'notes';
+const folderPath = getEntryFolderPath(entry);
 ---
 
-<BaseLayout title={entry.data.title} description={getEntryDescription(entry)}>
-  <article class="content-page">
-    <header class="content-header">
-      <p class="eyebrow">{isNote ? '花园笔记' : '博客文章'}</p>
-      <h1>{entry.data.title}</h1>
-      <p class="content-description">{getEntryDescription(entry)}</p>
-      <div class="content-meta">
-        <span>发布：{formatDate(getEntryPublishedDate(entry))}</span>
-        <span>更新：{formatDate(getEntryDate(entry))}</span>
-        {isNote && <span>状态：{getNoteStatusLabel(entry.data.status)}</span>}
-      </div>
-      {entry.data.tags.length > 0 && (
-        <div class="tag-list" aria-label="标签">
-          {entry.data.tags.map((tag) => <Tag name={tag} />)}
+<BaseLayout title={entry.data.title} description={getEntryDescription(entry)} wide>
+  <div class="docs-layout">
+    <FolderNav tree={tree} collection={entry.collection} currentPath={folderPath} currentId={entry.id} />
+    <div class="docs-main">
+    {/* data-pagefind-body 把索引范围限制在正文，导航和页脚不会被搜进每一条结果。两侧栏在它外面。 */}
+    <article class="content-page" data-pagefind-body data-pagefind-meta={`kind:${isNote ? '笔记' : '文章'}`} data-pagefind-filter={`类型:${isNote ? '笔记' : '文章'}`}>
+      <header class="content-header">
+        {/* 面包屑是导航不是正文，不参与索引。 */}
+        <Breadcrumb collection={entry.collection} folderPath={folderPath} current={entry.data.title} />
+        <p class="eyebrow" data-pagefind-ignore>{isNote ? '花园笔记' : '博客文章'}</p>
+        <h1>{entry.data.title}</h1>
+        <p class="content-description">{getEntryDescription(entry)}</p>
+        {/* 日期不参与索引，否则会挤进搜索结果的摘要里。 */}
+        <div class="content-meta" data-pagefind-ignore>
+          <span>发布：{formatDate(getEntryPublishedDate(entry))}</span>
+          <span>更新：{formatDate(getEntryDate(entry))}</span>
+          {isNote && <span>状态：{getNoteStatusLabel(entry.data.status)}</span>}
         </div>
+        {entry.data.tags.length > 0 && (
+          <div class="tag-list" aria-label="标签">
+            {entry.data.tags.map((tag) => <Tag name={tag} />)}
+          </div>
+        )}
+      </header>
+      <div class="prose">
+        <slot />
+      </div>
+      {/* 反向链接是派生内容，data-pagefind-ignore 避免它污染搜索摘要。 */}
+      {backlinks.length > 0 && (
+        <section class="backlinks" data-pagefind-ignore>
+          <h2>被以下内容引用</h2>
+          <ul>
+            {backlinks.map((backlink) => (
+              <li>
+                <a href={getEntryUrl(backlink)}>{backlink.data.title}</a>
+                <span class="backlink-kind">{backlink.collection === 'notes' ? '笔记' : '文章'}</span>
+                <p>{getEntryDescription(backlink)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
-    </header>
-    <div class="prose">
-      <slot />
+    </article>
     </div>
-  </article>
+    <TocRail headings={headings} />
+  </div>
 </BaseLayout>

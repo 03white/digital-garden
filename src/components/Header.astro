@@ -1,13 +1,40 @@
 ---
+import { Image } from 'astro:assets';
+import avatar from '../assets/蓝毛.png';
 import { SITE, withBase } from '../lib/site';
+
+const currentPath = Astro.url.pathname.replace(/\/?$/, '/');
+
+/** 首页要精确匹配，其它导航项按前缀匹配，这样 /notes/cpp/x/ 也能点亮「笔记」。 */
+function isActive(href: string) {
+  const target = withBase(href).replace(/\/?$/, '/');
+
+  return href === '/' ? currentPath === target : currentPath.startsWith(target);
+}
 ---
 
 <header class="site-header">
-  <a class="site-title" href={withBase('/')}>{SITE.title}</a>
-  <div class="site-actions">
+  <div class="site-brand">
+    <a class="site-title" href={withBase('/')}>
+      {/* 源图是 1470x829，这里按比例取小图，CSS 再裁成圆形。 */}
+      <Image class="site-avatar" src={avatar} alt="" width={96} height={54} loading="eager" />
+      <span class="site-title-text">{SITE.title}</span>
+    </a>
     <nav class="site-nav" aria-label="主导航">
-      {SITE.navLinks.map((link) => <a href={withBase(link.href)}>{link.label}</a>)}
+      {SITE.navLinks.map((link) => (
+        <a href={withBase(link.href)} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>
+      ))}
     </nav>
+  </div>
+  <div class="site-actions">
+    {/* 普通 GET 表单：搜索页本来就支持 ?q=，不需要额外的客户端逻辑。 */}
+    <form class="site-search" method="get" action={withBase('/search/')} role="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+      <input type="search" name="q" placeholder="搜索" aria-label="搜索站内内容" autocomplete="off" />
+    </form>
     <button class="theme-toggle" type="button" aria-label="切换浅色/深色主题" data-theme-toggle>
       <span class="theme-toggle-icon" aria-hidden="true">☾</span>
       <span class="theme-toggle-text">深色</span>

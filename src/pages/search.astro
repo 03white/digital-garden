@@ -1,0 +1,123 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索" description="在这个数字花园里检索文章和笔记。">
+  <section class="page-heading">
+    <p class="eyebrow">Search</p>
+    <h1>搜索</h1>
+    <p>在全部文章和笔记的正文里检索，中文和英文都可以。</p>
+  </section>
+
+  <div class="search-panel">
+    <label class="search-field">
+      <span class="visually-hidden">搜索关键词</span>
+      <input
+        type="search"
+        id="search-input"
+        placeholder="输入关键词，例如 cmake 或 预设"
+        autocomplete="off"
+        autofocus
+      />
+    </label>
+    <p class="search-status" id="search-status" role="status">正在准备索引……</p>
+    <div class="entry-list" id="search-results"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Pagefind 没有随包发类型，这里只声明我们实际用到的那部分。
+  interface PagefindResultData {
+    url: string;
+    excerpt: string;
+    meta?: { title?: string; kind?: string };
+  }
+
+  interface PagefindSearchResult {
+    data: () => Promise<PagefindResultData>;
+  }
+
+  interface PagefindApi {
+    options: (config: { baseUrl: string }) => Promise<void>;
+    debouncedSearch: (
+      query: string,
+      debounceMs: number,
+    ) => Promise<{ results: PagefindSearchResult[] } | null>;
+  }
+
+  const input = document.querySelector('#search-input');
+  const status = document.querySelector('#search-status');
+  const results = document.querySelector('#search-results');
+
+  if (input instanceof HTMLInputElement && status && results) {
+    let pagefind: PagefindApi | null = null;
+
+    const loadPagefind = async () => {
+      if (!pagefind) {
+        // 索引是构建期产物，开发时来自上一次 build，所以这个模块在 Vite 眼里
+        // 并不存在，必须用 @vite-ignore 跳过静态分析。
+        // 路径也要走 BASE_URL，否则子路径部署下取不到。
+        pagefind = (await import(
+          /* @vite-ignore */ `${import.meta.env.BASE_URL}pagefind/pagefind.js`
+        )) as PagefindApi;
+        // dist 的根就是站点 base 的根，索引里的 URL 不含 base，这里补回去。
+        await pagefind.options({ baseUrl: import.meta.env.BASE_URL });
+      }
+
+      return pagefind;
+    };
+
+    const escapeHtml = (value: string) =>
+      value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const render = (items: PagefindResultData[]) => {
+      results.innerHTML = items
+        .map(
+          (item) => `
+            <article class="entry-card">
+              <div class="entry-meta"><span>${escapeHtml(item.meta?.kind ?? '内容')}</span></div>
+              <h2><a href="${escapeHtml(item.url)}">${escapeHtml(item.meta?.title ?? item.url)}</a></h2>
+              <p>${item.excerpt}</p>
+            </article>`,
+        )
+        .join('');
+    };
+
+    const run = async (query: string) => {
+      if (!query.trim()) {
+        results.innerHTML = '';
+        status.textContent = '输入关键词开始搜索。';
+        return;
+      }
+
+      try {
+        const instance = await loadPagefind();
+        const search = await instance.debouncedSearch(query, 200);
+
+        // 返回 null 表示这次搜索已经被更新的输入取代了。
+        if (search === null) {
+          return;
+        }
+
+        const items = await Promise.all(search.results.slice(0, 20).map((result) => result.data()));
+
+        status.textContent = items.length ? `找到 ${search.results.length} 条结果。` : '没有找到匹配的内容。';
+        render(items);
+      } catch {
+        results.innerHTML = '';
+        status.textContent = '索引还没生成。先运行一次 npm run build，再回到这个页面。';
+      }
+    };
+
+    status.textContent = '输入关键词开始搜索。';
+    input.addEventListener('input', () => run(input.value));
+
+    // 支持 /search/?q=关键词 这样直接带着查询词进来。
+    const initialQuery = new URLSearchParams(window.location.search).get('q');
+
+    if (initialQuery) {
+      input.value = initialQuery;
+      run(initialQuery);
+    }
+  }
+</script>

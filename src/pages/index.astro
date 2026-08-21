@@ -1,27 +1,37 @@
 ﻿---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
+import RepoCarousel from '../components/RepoCarousel.astro';
 import Tag from '../components/Tag.astro';
 import { getAllTags, getPublishedNotes, getPublishedPosts } from '../lib/content';
+import { getRepos } from '../lib/github';
 import { SITE, withBase } from '../lib/site';
 
-const [posts, notes, tags] = await Promise.all([
+// getRepos() 拉不到会自己回退到 FALLBACK_REPOS 并 warn，不会让构建失败。
+const [posts, notes, tags, repos] = await Promise.all([
   getPublishedPosts(),
   getPublishedNotes(),
   getAllTags(),
+  getRepos(),
 ]);
 ---
 
-<BaseLayout>
-  <section class="hero">
-    <p class="eyebrow">Digital Garden</p>
-    <h1>持续生长的个人知识花园</h1>
-    <p>{SITE.description}</p>
-    <div class="hero-actions">
-      <a class="button" href={withBase('/posts/')}>阅读文章</a>
-      <a class="button secondary" href={withBase('/notes/')}>浏览笔记</a>
+{/* wide：hero banner 要通栏铺满，下面的内容再自己套回 960px 居中容器。 */}
+<BaseLayout wide>
+  <section class="hero-banner">
+    <div class="page-container hero">
+      <p class="eyebrow">Digital Garden</p>
+      <h1>持续生长的个人知识花园</h1>
+      <p>{SITE.description}</p>
+      <div class="hero-actions">
+        <a class="button" href={withBase('/posts/')}>阅读文章</a>
+        <a class="button secondary" href={withBase('/notes/')}>浏览笔记</a>
+      </div>
     </div>
   </section>
+
+  <div class="page-container">
+  {repos.length > 0 && <RepoCarousel repos={repos} />}
 
   <section class="section-block">
     <div class="section-heading">
@@ -54,4 +64,5 @@ const [posts, notes, tags] = await Promise.all([
       </div>
     </section>
   )}
+  </div>
 </BaseLayout>

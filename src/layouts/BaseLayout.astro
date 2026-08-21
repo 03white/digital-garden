@@ -1,15 +1,17 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { SITE } from '../lib/site';
+import { SITE, withBase } from '../lib/site';
 import '../styles/global.css';
 
 interface Props {
   title?: string;
   description?: string;
+  /** 通栏页面（文档三栏）自己管容器；默认套一层 960px 居中的 .page-container。 */
+  wide?: boolean;
 }
 
-const { title = SITE.title, description = SITE.description } = Astro.props;
+const { title = SITE.title, description = SITE.description, wide = false } = Astro.props;
 const pageTitle = title === SITE.title ? title : `${title} | ${SITE.title}`;
 const canonicalUrl = Astro.url.href;
 ---
@@ -25,6 +27,9 @@ const canonicalUrl = Astro.url.href;
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.title} · 文章`} href={withBase('/rss.xml')} />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.title} · 笔记`} href={withBase('/notes/rss.xml')} />
     <script is:inline>
       (() => {
         const storageKey = 'digital-garden-theme';
@@ -46,13 +51,13 @@ const canonicalUrl = Astro.url.href;
     <title>{pageTitle}</title>
   </head>
   <body>
-    <div class="site-shell">
-      <Header />
-      <main>
-        <slot />
-      </main>
-      <Footer />
-    </div>
+    {/* 流星层：固定在视口、不吃事件，是卡片 backdrop-filter 能看出效果的原因。 */}
+    <canvas class="meteor-layer" data-meteors aria-hidden="true"></canvas>
+    <Header />
+    <main class="site-main">
+      {wide ? <slot /> : <div class="page-container"><slot /></div>}
+    </main>
+    <Footer />
     <script is:inline>
       (() => {
         const storageKey = 'digital-garden-theme';
@@ -90,6 +95,241 @@ const canonicalUrl = Astro.url.href;
           const nextTheme = getTheme() === 'light' ? 'dark' : 'light';
           applyTheme(nextTheme);
           storeTheme(nextTheme);
+        });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        // 归档侧边栏在 HTML 里默认 open：桌面端本来就该展开，无 JS 时也不会把目录锁死。
+        // 窄屏下它会顶在正文上面，所以首次加载时收起来，之后由用户自己控制。
+        const nav = document.querySelector('[data-folder-nav]');
+
+        if (nav && window.matchMedia('(max-width: 880px)').matches) {
+          nav.removeAttribute('open');
+        }
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        // 右栏页内目录：阅读进度 + 当前章节高亮。这是全站唯一需要客户端 JS 的部分，
+        // 没有它目录仍然是一组可用的锚点链接。
+        const toc = document.querySelector('[data-toc]');
+
+        if (!toc) {
+          return;
+        }
+
+        const bar = toc.querySelector('[data-toc-bar]');
+        const value = toc.querySelector('[data-toc-value]');
+        const links = [...toc.querySelectorAll('a[href^="#"]')];
+        const targets = links
+          .map((link) => ({ link, el: document.getElementById(decodeURIComponent(link.hash.slice(1))) }))
+          .filter((item) => item.el);
+
+        let active = null;
+        let queued = false;
+
+        const update = () => {
+          queued = false;
+
+          const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+          const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
+          const percent = Math.round(Math.min(Math.max(ratio, 0), 1) * 100);
+
+          if (bar) {
+            bar.style.width = percent + '%';
+          }
+
+          if (value) {
+            value.textContent = percent + '%';
+          }
+
+          // 取最后一个已经滚过顶栏的标题；都没滚到就用第一个。
+          const line = document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0;
+          let current = targets.length ? targets[0] : null;
+
+          for (const item of targets) {
+            if (item.el.getBoundingClientRect().top <= line + 8) {
+              current = item;
+            }
+          }
+
+          if (current !== active) {
+            active?.link.removeAttribute('aria-current');
+            current?.link.setAttribute('aria-current', 'true');
+            active = current;
+          }
+        };
+
+        const onScroll = () => {
+          if (!queued) {
+            queued = true;
+            requestAnimationFrame(update);
+          }
+        };
+
+        update();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        // 流星雨背景。三条纪律：尊重 prefers-reduced-motion、切走标签页就停、
+        // 主题切换时重新取色（颜色来自 CSS 变量，不在这里写死）。
+        const canvas = document.querySelector('[data-meteors]');
+
+        if (!canvas || !canvas.getContext) {
+          return;
+        }
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        if (reduceMotion.matches) {
+          return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const COUNT = 18;
+        // 朝左下飞，115° 是「斜着划过」看起来最自然的角度。
+        const RAD = (115 * Math.PI) / 180;
+        const DX = Math.cos(RAD);
+        const DY = Math.sin(RAD);
+
+        let width = 0;
+        let height = 0;
+        let colors = ['#ffffff'];
+        let meteors = [];
+        let last = 0;
+        let frame = 0;
+
+        const readColors = () => {
+          const style = getComputedStyle(document.documentElement);
+          const accent = style.getPropertyValue('--color-accent').trim();
+          const accent2 = style.getPropertyValue('--color-accent-2').trim();
+          const text = style.getPropertyValue('--color-text').trim();
+
+          colors = [accent || '#22d3ee', accent2 || '#a78bfa', text || '#ffffff'];
+        };
+
+        const resize = () => {
+          // dpr 封顶 2：高分屏上再往上加只是白烧 GPU，肉眼看不出差别。
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+
+        const spawn = (initial) => {
+          // 一颗流星落完整屏高度会左移 height*|DX/DY|，出生点向右多铺这么宽，
+          // 屏幕左下角才不会出现一块永远没有流星的空区。
+          const drift = height * Math.abs(DX / DY);
+
+          return {
+            x: Math.random() * (width + drift),
+            y: initial ? Math.random() * height : -Math.random() * height * 0.4 - 40,
+            len: 60 + Math.random() * 160,
+            speed: 180 + Math.random() * 320,
+            alpha: 0.25 + Math.random() * 0.5,
+            width: Math.random() < 0.25 ? 1.8 : 1,
+            color: colors[Math.floor(Math.random() * colors.length)],
+          };
+        };
+
+        const reset = () => {
+          meteors = Array.from({ length: COUNT }, () => spawn(true));
+        };
+
+        const draw = (now) => {
+          frame = requestAnimationFrame(draw);
+
+          // 首帧和从后台切回来时 dt 会很大，钳一下免得流星瞬移。
+          const dt = Math.min((now - last) / 1000, 0.05);
+          last = now;
+
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = 0; i < meteors.length; i += 1) {
+            const m = meteors[i];
+
+            m.x += DX * m.speed * dt;
+            m.y += DY * m.speed * dt;
+
+            const tailX = m.x - DX * m.len;
+            const tailY = m.y - DY * m.len;
+            const gradient = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+
+            gradient.addColorStop(0, m.color);
+            gradient.addColorStop(1, 'transparent');
+
+            ctx.globalAlpha = m.alpha;
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = m.width;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(tailX, tailY);
+            ctx.stroke();
+
+            // 飞出左下角就回收再投一颗，数量恒定。
+            if (m.y - m.len > height || m.x + m.len < 0) {
+              meteors[i] = spawn(false);
+            }
+          }
+
+          ctx.globalAlpha = 1;
+        };
+
+        const start = () => {
+          if (!frame) {
+            last = performance.now();
+            frame = requestAnimationFrame(draw);
+          }
+        };
+
+        const stop = () => {
+          if (frame) {
+            cancelAnimationFrame(frame);
+            frame = 0;
+          }
+        };
+
+        readColors();
+        resize();
+        reset();
+        start();
+
+        window.addEventListener('resize', () => {
+          resize();
+          reset();
+        });
+        // 标签页在后台时 rAF 本来就会被节流，这里显式停掉更干净。
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            stop();
+          } else {
+            start();
+          }
+        });
+        // 主题切换会改 --color-accent，重新取色让已有流星也跟着换。
+        new MutationObserver(() => {
+          readColors();
+          meteors.forEach((m) => {
+            m.color = colors[Math.floor(Math.random() * colors.length)];
+          });
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        reduceMotion.addEventListener('change', (event) => {
+          if (event.matches) {
+            stop();
+            ctx.clearRect(0, 0, width, height);
+          } else {
+            start();
+          }
         });
       })();
     </script>
