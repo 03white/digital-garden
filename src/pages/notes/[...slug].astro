@@ -1,0 +1,66 @@
+---
+import { render } from 'astro:content';
+import FolderArchive from '../../components/FolderArchive.astro';
+import FolderNav from '../../components/FolderNav.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getBacklinks, getFolderTree, getPublishedNotes } from '../../lib/content';
+import { findFolder, flattenFolderPaths } from '../../lib/folder-tree';
+
+/**
+ * 一条路由同时供两种页面：笔记本身，和它所在的文件夹归档页。
+ *
+ * 必须是 `[...slug]` 而不是 `[slug]`——归档后 entry.id 会带上目录（`cpp/async`），
+ * 单段动态路由在 dev 下匹配不到（路由正则是 `[^/]+`）。
+ */
+export async function getStaticPaths() {
+  const notes = await getPublishedNotes();
+  const tree = await getFolderTree('notes');
+  const entryIds = new Set(notes.map((note) => note.id));
+
+  return [
+    ...notes.map((note) => ({
+      params: { slug: note.id },
+      props: { note, folder: undefined },
+    })),
+    ...flattenFolderPaths(tree)
+      .filter((folderPath) => {
+        // 同名的笔记和文件夹会撞出同一个 URL，Astro 会直接报重复路由。
+        // 条目优先，文件夹让位，只警告不中断构建。
+        if (entryIds.has(folderPath)) {
+          console.warn(`[archive] notes/${folderPath}/ 同时是笔记和文件夹，归档页已跳过`);
+
+          return false;
+        }
+
+        return true;
+      })
+      .map((folderPath) => ({
+        params: { slug: folderPath },
+        props: { note: undefined, folder: findFolder(tree, folderPath) },
+      })),
+  ];
+}
+
+const { note, folder } = Astro.props;
+const tree = await getFolderTree('notes');
+// headings 给右栏页内目录用；Sätteri 会把同样的 slug 写成标题元素的 id。
+const rendered = note ? await render(note) : undefined;
+const backlinks = note ? await getBacklinks(note) : [];
+---
+
+{note && rendered && (
+  <ContentLayout entry={note} backlinks={backlinks} tree={tree} headings={rendered.headings}>
+    <rendered.Content />
+  </ContentLayout>
+)}
+{folder && (
+  <BaseLayout title={folder.label} description={`归档「${folder.label}」下的所有笔记。`} wide>
+    <div class="docs-layout no-toc">
+      <FolderNav tree={tree} collection="notes" currentPath={folder.path} />
+      <div class="docs-main">
+        <FolderArchive folder={folder} collection="notes" />
+      </div>
+    </div>
+  </BaseLayout>
+)}

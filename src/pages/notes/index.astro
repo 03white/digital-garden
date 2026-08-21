@@ -1,18 +1,26 @@
 ﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FolderNav from '../../components/FolderNav.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getPublishedNotes } from '../../lib/content';
+import { getFolderTree, getPublishedNotes } from '../../lib/content';
 
+// 列表页是「全部」视图，不按目录过滤——分目录浏览走侧边栏和归档页。
 const notes = await getPublishedNotes();
+const tree = await getFolderTree('notes');
 ---
 
-<BaseLayout title="笔记" description="所有持续生长中的花园笔记。">
-  <section class="page-heading">
-    <p class="eyebrow">Notes</p>
-    <h1>笔记</h1>
-    <p>碎片、概念、索引和仍在持续演进的知识卡片。</p>
-  </section>
-  <div class="entry-list">
-    {notes.map((note) => <PostCard entry={note} />)}
+<BaseLayout title="笔记" description="所有持续生长中的花园笔记。" wide>
+  <div class="docs-layout no-toc">
+    <FolderNav tree={tree} collection="notes" currentPath="" />
+    <div class="docs-main">
+      <section class="page-heading">
+        <p class="eyebrow">Notes</p>
+        <h1>笔记</h1>
+        <p>碎片、概念、索引和仍在持续演进的知识卡片。</p>
+      </section>
+      <div class="entry-list">
+        {notes.map((note) => <PostCard entry={note} />)}
+      </div>
+    </div>
   </div>
 </BaseLayout>

@@ -1,0 +1,55 @@
+---
+import Breadcrumb from './Breadcrumb.astro';
+import PostCard from './PostCard.astro';
+import type { GardenCollection } from '../lib/content';
+import { getFolderUrl } from '../lib/content';
+import type { FolderNode } from '../lib/folder-tree';
+
+/**
+ * 文件夹归档页的主体。只列直属内容——子目录以卡片形式露出，点进去继续往下翻，
+ * 和侧边树的层级模型保持一致。
+ */
+
+interface Props {
+  folder: FolderNode;
+  collection: GardenCollection;
+}
+
+const { folder, collection } = Astro.props;
+const label = collection === 'posts' ? '文章' : '笔记';
+// 当前目录由面包屑的最后一段（胶囊）表示，父路径才是可点的链接。
+const parentPath = folder.path.split('/').slice(0, -1).join('/');
+---
+
+<section class="page-heading">
+  <Breadcrumb collection={collection} folderPath={parentPath} current={folder.label} />
+  <h1>{folder.label}</h1>
+  <p>这个归档下共有 {folder.count} 篇{label}{folder.folders.length > 0 ? `，分在 ${folder.folders.length} 个子目录里` : ''}。</p>
+</section>
+
+{folder.folders.length > 0 && (
+  <section class="section-block">
+    <div class="section-heading">
+      <h2>子目录</h2>
+    </div>
+    <div class="folder-grid">
+      {folder.folders.map((child) => (
+        <a class="folder-grid-item" href={getFolderUrl(collection, child.path)}>
+          <span class="folder-grid-name">{child.label}</span>
+          <span class="folder-grid-count">{child.count} 篇</span>
+        </a>
+      ))}
+    </div>
+  </section>
+)}
+
+{folder.entries.length > 0 && (
+  <section class="section-block">
+    <div class="section-heading">
+      <h2>{folder.folders.length > 0 ? '本目录下' : '内容'}</h2>
+    </div>
+    <div class="entry-list">
+      {folder.entries.map((entry) => <PostCard entry={entry} />)}
+    </div>
+  </section>
+)}

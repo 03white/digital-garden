@@ -249,8 +249,10 @@ function validateSlug(value) {
     throw new Error('slug 不能为空，建议使用英文、数字和短横线');
   }
 
-  if (!/^[a-z0-9][a-z0-9-_/]*$/.test(slug)) {
-    throw new Error('slug 只能包含小写英文、数字、短横线、下划线或斜杠');
+  // 斜杠是归档目录分隔符：cpp/async-callback 会落到 src/content/<type>/cpp/ 下，
+  // URL 也跟着变成 /notes/cpp/async-callback/。逐段校验顺便挡掉 `cpp//x`、`cpp/` 这类写法。
+  if (slug.split('/').some((segment) => !/^[a-z0-9][a-z0-9-_]*$/.test(segment))) {
+    throw new Error('slug 每一段都只能是小写英文、数字、短横线或下划线，用 / 分隔归档目录，例如 cpp/async-callback');
   }
 
   return slug;
@@ -295,10 +297,11 @@ function printHelp() {
   npm run new:post -- "My New Post"
   npm run new:note -- "My New Note"
   npm run new:post -- --title "My New Post" --slug my-new-post --tags astro,blog --publish
+  npm run new:note -- --title "异步回调" --slug cpp/async-callback   # 归档到 cpp/ 目录
 
 参数：
   --title <title>          标题
-  --slug <slug>            文件名，建议小写英文、数字和短横线
+  --slug <slug>            文件名，小写英文、数字和短横线；用 / 分隔归档目录
   --description <text>     摘要
   --tags <tag1,tag2>       标签，用英文逗号分隔
   --draft                  生成草稿 draft: true

@@ -1,0 +1,46 @@
+---
+import FolderTree from './FolderTree.astro';
+import type { GardenCollection } from '../lib/content';
+import { getFolderUrl } from '../lib/content';
+import type { FolderNode } from '../lib/folder-tree';
+
+/**
+ * 左侧归档栏，三栏布局里的一整列（不是卡片）。
+ *
+ * 整体是一个 <details>：桌面端 summary 被 CSS 藏起来、始终展开并独立滚动，
+ * 窄屏下由 BaseLayout 末尾那段脚本收起来，变成一个「目录」开关。
+ */
+
+interface Props {
+  tree: FolderNode;
+  collection: GardenCollection;
+  currentPath: string;
+  currentId?: string;
+}
+
+const { tree, collection, currentPath, currentId } = Astro.props;
+const label = collection === 'posts' ? '文章' : '笔记';
+const isRoot = currentId === undefined && currentPath === '';
+---
+
+<details class="docs-rail docs-sidebar folder-nav" open data-folder-nav>
+  <summary class="folder-nav-toggle">
+    <svg class="folder-row-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+    目录
+    <span class="folder-tree-count">{tree.count}</span>
+  </summary>
+  <nav class="folder-nav-body" aria-label={`${label}归档目录`}>
+    <p class="eyebrow folder-nav-heading">归档</p>
+    <a
+      class="folder-row folder-nav-all"
+      href={getFolderUrl(collection, '')}
+      data-current={isRoot ? '' : undefined}
+      aria-current={isRoot ? 'page' : undefined}
+    >
+      <span class="folder-row-label">全部{label}</span>
+    </a>
+    <FolderTree node={tree} collection={collection} currentPath={currentPath} currentId={currentId} />
+  </nav>
+</details>
