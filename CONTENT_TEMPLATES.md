@@ -42,7 +42,6 @@ npm run new:post -- --title 文章标题 --slug my-new-post --description 文章
 
 我已经放了几份草稿模板在 `src/content/posts/templates/`：
 
-- `src/content/posts/templates/tutorial-post.md`：教程文章。
 - `src/content/posts/templates/project-retrospective.md`：项目复盘。
 - `src/content/posts/templates/debugging-notes.md`：问题排查。
 - `src/content/posts/templates/reading-post.md`：读书 / 资料笔记文章。
@@ -52,16 +51,16 @@ npm run new:post -- --title 文章标题 --slug my-new-post --description 文章
 示例：
 
 ```powershell
-Copy-Item src\content\posts\templates\tutorial-post.md src\content\posts\my-tutorial.md
+Copy-Item src\content\posts\templates\debugging-notes.md src\content\posts\my-debugging-notes.md
 ```
 
-然后编辑 `src/content/posts/my-tutorial.md`：
+然后编辑 `src/content/posts/my-debugging-notes.md`：
 
 ```yaml
-title: 我的教程标题
+title: 我的排查记录
 description: 这篇文章的摘要。
 pubDate: 2026-08-17
-tags: [tutorial, astro]
+tags: [debugging, cpp]
 draft: true
 ```
 

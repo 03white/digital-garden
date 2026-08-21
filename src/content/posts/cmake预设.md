@@ -6,6 +6,7 @@ tags: [CPP, cmake]
 draft: false
 ---
 ## 好用的CMakePresets.json
+CMakePresets.json是cmake官方的预设文件，用来把常用的配置参数保存下来，避免每次手动输入一长串命令。VS和vscode都能识别它，让你在IDE里一键切换不同的编译环境。
 在没有CMakePresets.json（cmake预设文件之前），我们用每次cmake构建项目，必须手动输入以下命令：
 ```cmake
 cmake -S . -B build/Debug -G Ninja \
